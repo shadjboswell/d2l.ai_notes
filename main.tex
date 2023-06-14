@@ -139,4 +139,81 @@ Watching Andrej Karpathy's video \cite{AndrejKarpathyMakemoreVideo}
     \item Andrej's tips: READ THROUGH BROADCASTING SEMANTICS! Treat it with respect and take your time. 
     \item In place operations have the potential to be faster. Use them when you can.
 \end{enumerate}
+
+\newday{2023-06-13}
+
+I spent most of the day reading from d2l.ai Chapter 3. See the "d2l.ai Notes" Overleaf for updated notes. 
+\\
+
+Andrej Karpahty Video: \cite{AndrejKarpathyMakemoreVideo}
+\begin{enumerate}
+    \item Likelihood estimation. Your model assigns probabilities to every prediction that it makes. If you take your training set and look at the probabilities for each step, they should be close to 1 if your model is performing well. The higher these probabilities are, the better that your model is performing. This is because it is accurately predicting what it needs to predict or what it was trained to predict. The likelihood of a model is the all of the probabilities in your training set multiplied together. This gives an indication of how well your model can predict the entire data set. Since these are less than 0, you often end up with a really small number. Thus, most people work with the log of the likelihood. The log of the likelihood approaches 0 as your likelihood approaches 1 and $-\inf$ as your likelihood approaches 0. This is mostly for convenience: $log(a*b*c) = log(a)+log(b)+log(c)$
+    \item How high can log likelihood get? 0 when all probs are 1, $-\infty$ when all probs are 0. This is counter-intuitive with respect to the loss function so we will work with the negative log likelihood instead. This just flips the log around the x-axis. Thus, the lowest you can get is 0 which is the most accurate and the highest you can get is $\infty$ which is the least accurate. 
+    \item We want to find the parameters that minimize the negative log likelihood (maximize the likelihood). The average negative log likelihood summarizes your model. 
+    \item Model Smoothing: Add some fake counts to everything to smooth out the model. We do not necessarily want to get rid of every single probability. As long as we keep the model smoothing small, our model will still think that the things that were previously 0 are unlikely but will not return an infinite loss. 
+    \item Now lets create a neural network for our bigram language model. Pretty much the same approach but with weights, biases, and backpropogation through our loss function. Steps:
+    \begin{enumerate}
+        \item Create training set of bigrams. This will be made up of two lists: the inputs and labels (targets). Both will be integers to our lookup table. We will then create tensors from these. Example: "emma" has 5 examples for our model: [.e, em, mm, ma, a.]. Thus, our training data will be: [0, 5, 13, 13, 1] and [5, 13, 13, 1, 0]
+        \item Tangent: Use torch.tensor not torch.Tensor. torch.Tensor will set dtype to float32 no matter what the dtype actually is. torch.tensor will infer the dtype from what you feed in. 
+        \item Tangent: You cannot just plug an integer index into a neural net. We need to pass in a vector. (It really would not make sense to pass an integer index into a neural net. This would skew the weights and the activation of the receiving neuron.) Thus, we introduce one hot encoding. This is a common way of encoding integers into a neural net. Example: For the integer 13, we create a 1X13 vector of all 0's besides the 13th one is a 1. When we plug numbers into neural nets, we want them to be floating type so they can take on a range of values.  
+        \item Initialize the weights using randn. We want to do this randomly so we don't mess anything up. 
+        \item Multiply our encoding by weights. (Matrix Multiply '@'). This is super efficient!!! We can feed in all 5 of our examples and simultaneously compute the activation of each neuron for each example. 
+        \item We want 27 neurons in our first layer. So we change the shape of our weights matrix to 27x27. These neurons are do not have a bias nor a nonlinearity. \item We are not going to have any other layers. The simplest neural net. A single layer. 
+        \item what should these 27 outputs be? We are trying to produce a probability distribution for each character so we can predict what the next character will be. Right now, we just have some positive and negative numbers. Probabilities are positive and they sum to one. Thus, these cannot come from a neural net. 
+        \item How do we interpret the output? The outputs are log(counts) (logits) so we just exponentiate them. Then we can use these to calculate probability. Thus, creating a distribution which we can sample to pick the next letter??
+        \item We then get $n$ rows for every one of our $n$ examples. Each row is a distribution. The neural nets assignment for how likely each one of the 27 numbers is to come next.  
+        \item Softmax: Taking the logits, exponentiating them, and then normalizing to get a probability. Very common layer in neural nets. A way of taking the outputs of a neural net layer and creating a probability distribution from them. The outputs can be negative, positive, any number really. but the result of the softmax is a vector which is totally positive and sums to 1. 
+        \item Each operation is easy to back propagate through and differentiable. Thus, we can train the model with gradient descent. 
+    \end{enumerate}
+
+    \item How to optimize a neural net. (\textbf{DO NOT GUESS AND CHECK. According to Andrej: "This is amateur hour"})
+    The big deal is that we have a loss function! We can minimize this loss through back propagation and gradient descent!!! Booyah! Remember the algorithm for gradient descent: 
+    \begin{enumerate}
+        \item Forward pass
+        \item Calculate loss
+        \item Zero-gradients 
+        \item Back propagate
+        \item Update parameters in the opposite direction of the gradient
+        \item Repeat until "done" (you choose/good enough accuracy)
+    \end{enumerate}
+    \item We are using the negative log likelihood because we are doing classification and not regression. Reminder: Look into this more.
+    \item Calculating our loss:
+    \begin{enumerate}
+        \item Pluck out the probabilities corresponding to our targets. 
+        \item Take the log of each 
+        \item Take the average
+        \item Negate the result
+        \item This is our loss function for classification
+    \end{enumerate}
+    \item Zero out the gradients. You can just set them to None. (This is more efficient)
+    \item Now we back propagate. Reminder: We need to set requires\_grad=True when we intialize our weights. We cannot back propagate if we do not do this. Now, just call, loss.backward(). AUTOMAGIC!
+    \item Now, W.grad tells us how each weight to each neuron influences the total loss. Thus, we now have a direction for updating the parameters. Reminder: We want to update in the opposite direction of the gradient. this looks like W += -$\eta$ * W.grad where $\eta$ is the learning rate. 
+    \item When we achieve low loss, this means the network is assigning high probability to the characters that should come next, low probability to the characters that should not come next, and everything in between
+    \item Tangent: Optimization in this case just means getting your neural network to perform better/be more accurate. 
+    \item \textbf{IMPORTANT: }We actually end up approaching the same loss value that we got when we just counted everything. We are just approaching the same problem from a different perspective. This is because we are not taking in anymore data than we had prior. We are still analyzing bigrams: looking at only the previous character to try and predict the next character. Note, this is only because the bigram statistics are very straightforward and the problem is not complicated. Gradient descent learning is much more flexible and can accommodate much more complex problems. (Still make sure you analyze the complexity of what you are trying to solve and choose the approach that suits the problem best). 
+    \item How are neural nets more flexible? We can use the same basis and fundamentals to set up our network. Rather than just feeding in one character to one layer, we can feed in multiple and have multiple layers. 
+    \item What are the fundamentals of a neural net? 
+    \begin{enumerate}
+        \item The output will always be logits
+        \item We take these logits through a softmax
+        \item We take the output of the soft max to calculate our loss (negative log)
+        \item We then backpropogate through our loss
+    \end{enumerate}
+    \item The only thing that will really change is how we do our forward pass. 
+    \item The one-hot vectors multiplied by the weights: What is actually happening is the one hot just plucks out the corresponding weight. 
+    \item Trying to incentivize W to be closer to 0 is equivalent to smoothing. The more that we send each W to 0, the more uniform our distribution gets? This introduces what is known as regularization. We can add regularization term to our loss calculation to try and incentivize W to go to 0, while at the same time trying to get the probabilities to match what we want the model to predict. Note: Look more into regulariztation later! We have to choose a regularization strength. You can think of regularization as a gravitational force and the weights desire to reach a probability that we want as something growing upward. The regularization sort of resists the changing of the weights. If it is too high, then we accumulate way too much loss and the weights cannot reach a value that results in an accurate model. With the right regularization, the distribution gets smoothed slightly, but the weights are still able to achieve their desired values, resulting in a model that is accurate, not-buggy, and realistic?
+\end{enumerate}
+
+\newday{2023-06-14}
+
+Harvey's Notebook \#4 (A lot of these notes will be direct paraphrases of Harve's notebook. You can find the notebook here: \cite{HarveyDamTREUGit}
+
+\begin{enumerate}
+    \item Cross-Correlation: A convolutional layer followed by an addition. The cross correlation of vectors $w$ and $x$ is $w \star x = z \in \mathbb{R}^{|x|-|w|+1}$. For example, suppose $w = [1,2,3]$ and $x = ]1,2,3,4,5]$. Then $w \star x = [1 * 1 + 2 * 2 + 3 * 3, 1 * 2 + 2 * 3 + 3 * 4, 1 * 3 + 2 * 4 + 3 * 5]$
+    \item Convolution: In ML this most often means cross-correlation. Generally a convolution is: an integral that expresses the amount of overlap of one function $g$ as it is shifted over another function $f$. In other words, we are shifting the function $g$ over $f$ to extract some crucial information. In cross-correlation, we are shifting $w$ over $x$ to see how $w$ changes $x$. Kernel choice in convolution matters greatly and it all depends on the information we want to extract from $x$
+    \item How are convolutional layers beneficial with respect to simple linear transformations? Convolutional layers allow us to pick out certain features from the image. If we know an image that we are trying to classify has very specific features, we can try to define a convolutional layer that will pull out those specific features. This allows for easier classification and labeling. We can just look at the data after applying a convolutional layer and say "Hey that looks like (or does not) this...". 
+    \item As a side note, convolutions can help us detect edges in images, filter images, sharpen images, and much more
+    \item Convolutional network layers have many kernels of different shapes and strides (how many pixels to move the kernel over after each $i$ or $j$ step. The kernels are learnable, so their elements serve as parameters in the neural network
+    \item Paraphrase: "Each kernel learns to detect a certain feature in the input, all combining to distill the information that we want from the input. Earlier layers will detect more simple shapes, while later layers will detect more sophisticate things such as shapes or faces."
+ \end{enumerate}
 \end{document} % this will automatically generate a references chapter if you cited any references throughout the text
