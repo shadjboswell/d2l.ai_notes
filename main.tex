@@ -201,7 +201,7 @@ Andrej Karpahty Video: \cite{AndrejKarpathyMakemoreVideo}
     \end{enumerate}
     \item The only thing that will really change is how we do our forward pass. 
     \item The one-hot vectors multiplied by the weights: What is actually happening is the one hot just plucks out the corresponding weight. 
-    \item Trying to incentivize W to be closer to 0 is equivalent to smoothing. The more that we send each W to 0, the more uniform our distribution gets? This introduces what is known as regularization. We can add regularization term to our loss calculation to try and incentivize W to go to 0, while at the same time trying to get the probabilities to match what we want the model to predict. Note: Look more into regulariztation later! We have to choose a regularization strength. You can think of regularization as a gravitational force and the weights desire to reach a probability that we want as something growing upward. The regularization sort of resists the changing of the weights. If it is too high, then we accumulate way too much loss and the weights cannot reach a value that results in an accurate model. With the right regularization, the distribution gets smoothed slightly, but the weights are still able to achieve their desired values, resulting in a model that is accurate, not-buggy, and realistic?
+    \item Trying to incentivize W to be closer to 0 is equivalent to smoothing. The more that we send each W to 0, the more uniform our distribution gets? This introduces what is known as regularization. We can add regularization term to our loss calculation to try and incentivize W to go to 0, while at the same time trying to get the probabilities to match what we want the model to predict. Note: Look more into regularization later! We have to choose a regularization strength. You can think of regularization as a gravitational force and the weights desire to reach a probability that we want as something growing upward. The regularization sort of resists the changing of the weights. If it is too high, then we accumulate way too much loss and the weights cannot reach a value that results in an accurate model. With the right regularization, the distribution gets smoothed slightly, but the weights are still able to achieve their desired values, resulting in a model that is accurate, not-buggy, and realistic?
 \end{enumerate}
 
 \newday{2023-06-14}
@@ -215,5 +215,152 @@ Harvey's Notebook \#4 (A lot of these notes will be direct paraphrases of Harve'
     \item As a side note, convolutions can help us detect edges in images, filter images, sharpen images, and much more
     \item Convolutional network layers have many kernels of different shapes and strides (how many pixels to move the kernel over after each $i$ or $j$ step. The kernels are learnable, so their elements serve as parameters in the neural network
     \item Paraphrase: "Each kernel learns to detect a certain feature in the input, all combining to distill the information that we want from the input. Earlier layers will detect more simple shapes, while later layers will detect more sophisticate things such as shapes or faces."
+    \item PyTorch Modules are functions that keep track of their parameters and gradients. 
+    \item nn.functional.conv2d applies a 2D Convolution over an input image composed of several input planes
+    \item Hyperparameters are parameters that we set before training which we do not update as we train. (in some cases you actually might. For example, you may scale the learning rate as you train so you can focus on the finer details later on in the training.)
+    \item We then need to make a dataloader out of the original images and our target images. (Yes, we computed the target images when we called nn.functional.conv2d). 
+    \item We will be using stochastic gradient descent (SGD) with torch.optim.SGD
+    \item Upon loading each batch: 
+    \begin{enumerate}
+        \item Zero all gradients (Note: \textbf{You must zero out the gradients before you backpropagate!!})
+        \item Forward pass
+        \item Calculate loss 
+        \item Backpropagate
+        \item Update Parameters and the Learning Rate
+    \end{enumerate}
+    \item One of the more common and appropriate  loss functions for image classification is Cross-Entropy Loss. Reminder: Look this up later!
+ \end{enumerate}
+
+ Harvey's Lecture
+ \begin{enumerate}
+     \item Two-Layer Perceptron: Linear, Relu, Linear
+ \end{enumerate}
+
+ Mu's Lecture: Malware and Machine Learning
+ \begin{enumerate}
+     \item Question: How can we classify malware? 
+     \item The total amount of malware is increasing. We discover new malware every year.
+     \item Example: rootkit -> Can tamper with the OS Kernel and hide it self from the user. Gives the attacker root access to the user's system. 
+     \item Viruses take up 9\% of total malware
+     \item What is a virus: Replicates itself by modifying other programs and inserting its own code. Must find and live within a host. By nature, it is parasitic. 
+     \item Propagation: Opportunistic through user interaction: running an app, booting the system
+     \item When it runs it looks for opportunity for infection. Looks for its own chance to run.
+     \item You can embed code in pdf's, Microsoft Office documents (macros)
+     \item Pseudocode for virus: \textbf{Look at Mu's slides and insert picture later}
+     \item Viruses only infect useful targets and only ones that have not already been infected. Then needs to modify the code to make sure that the malicious code will actually run
+     \item One way that we can do this is to prepend the virus to the program code. This is too obvious! The code is easy to identify 
+     \item Alternate way: Append virus code to end of the original program. Also add code at the beginning to make sure the virus code runs first
+     \item First virus: Creeper in 1971. Not a malicious virus. Just meant to gague the size of the ARAPNET
+     \item How do we detect malware?
+     \item Read Manually? Can be difficult because we do not have source code. We then need to reverse engineer it. (No symbol information). Not all languages need to compile, they just need an interpreter. Thus, we can still read some of the source code: js, Python. Still hard because of obfuscation technique
+     \item Obfuscation is the deliberate act of creating source or machine code that is difficult for humans to read and understand
+     \item Signature Detection: Ability to detect some malicious signatures
+     \item If we know that for a certain type of malware there is a specific signature, we can recognize it. These signature detection services are currently provided in all virus detection services
+     \item Polymorphism: A technique to evade signature based detection. Polymorphic code is the code that uses a polymorphic engine to mutate while keeping the original algorithm intact. Encryption is the most common method to hide code
+     \item Now, we just encrypt the code and insert the encrypted copy into the victim file. A weak, but simple and fast encryption technique works just fine
+     \item When the injected code runs, it needs to decrypt and then run. How?
+     \item insert decrypter and key in plain text and then the encrypted code
+     \item The injected code also contains en encryptor so it can encrypt itself when it infects a new host. Obviously, you use a different key
+     \item Defender can just use the decryptor and key to decrypt the malicious code and calssify it
+     \item Metamorphism: Code that when run outputs a logically equivalent version of its own code under some interpretation
+     \item Everytime the virus propagates, it generates syntatically different code. 
+     \item How?
+     \begin{enumerate}
+         \item Add NOPs
+         \item Add useless instructions and loops within code segments
+         \item Change register to use 
+         \item Change order of conditional code 
+         \item Reorder operations not dependent on one another
+         \item Replace one low-level algo with another
+         \item Remove some do-nothing padding and replace with different do-nothing padding
+     \end{enumerate}
+     \item With metamorphism, the original signature is completely gone. 
+     \item Semantics aware malware detection: The fundamental deficiency in the pattern-matching approach is that it ignores the semantics of the code
+     \item Semantic aware malware detection actually cares about a what a program does, not just the outcome. What are we actually looking? 
+     \item We build a model on top of the code to remove the unreliable parts: register values, \# of nops, things that can change with each program execution
+     \item we parse the code to see what it is actually trying to do and in what order. we can use this high level model and the patterns to perform detection
+     \item how do we build this model? Static and dynamic analysis
+     \begin{enumerate}
+         \item Static Analysis: Just looking at the code to observe what it actually doing and what it accomplishes in the end. Very scalable. Maybe not super sophisticated. You can only observe statically generate code. You cannot see the code that can only be generated when the program runs
+         \item Self Modifying code: Code that can change itself. You usually need to change the permissions of address memory so you can modify the code dynamically. So, static analysis is not great for detecting malware especially in binary programs
+         \item Dynamic Analysis: Analyzing the code as it runs
+         \item Can do this with a debugger -> Simple. Cannot do this with code that does not have symbols
+         \item You can also use emulators: VMWare, VirtualBox, other containers. You can just run the malware in the dedicated environment and then see what happened. Super useful so you do not mess with you own computer -> called Sandboxing. We can also have a complete view of the program. You can observe the behavior because you are outside of the emulator.
+         \item Dynamic analyzers will run the program and use the outcomes to generate a signature and then use that signature to classify malware. But, this is the defacto approach so malware users want to avoid this. 
+         \item How?
+         \begin{enumerate}
+             \item Malware users can detect the presence of a debugger. Then they will hide the malicious code
+             \item Emulators can also be easily detected through environment variables. Can also check the difference in behavior of program through the emulator and the program on the actual hardware. Timing can also be a factor. Typically much faster on the CPU than in the VM
+         \end{enumerate}
+         \item What is the solution? 
+         \begin{enumerate}
+             \item Run malware on bare-metal. All CPU's have virtualization techniques. CPUs can record every single line of code that was run. That way we can recover the behavior of the malware 
+         \end{enumerate}
+         \item Now, back to the project. We want to understand the more reliable bits of malware to train a classifier
+         \begin{enumerate}
+             \item Polymorphism: Consider code pattern not bits pattern
+             \item Metamorphism: Consider what program does and not just the outcome
+             \item What features or code captures can we detect?
+         \end{enumerate}
+         \item Let's build a malware classifer - a multi-class classifier. The features are already collected for you - On Canvas! :) 
+         \begin{enumerate}
+             \item "mov" feature: how many "mov" instructions one malware may contain
+             \item ".text" sections: how many ".text" sections one malware may contain
+         \end{enumerate}
+         \item Task: Train a malware classifier to automatically recognize which class a malware instance belongs to 
+     \end{enumerate}
+
+     Xinyi's talk on FP
+     \begin{enumerate}
+         \item IEEE has defined 5 exceptions with FP numbers 
+         \begin{enumerate}
+             \item Invalid
+             \item Div by 0
+             \item Overflow
+             \item Underflow
+             \item Enexact
+         \end{enumerate}
+         \item NVIDIA GPU's do not trap exceptions! They should be caught!
+         \item Exception reports on GPUs
+         \begin{enumerate}
+             \item NaNs in Neural Network 
+             \item NaNs in Linear Algebra Solver
+         \end{enumerate}
+         \item We need a tool that is fast, at binary level, and helps diagnose issues on the GPU 
+     \end{enumerate}
+ \end{enumerate}
+ \newday{2023-06-15}
+Sadayappan's Talk
+ \begin{enumerate}
+     \item Parallelism and optimization
+ \end{enumerate}
+ 
+ \newday{2023-6-20}
+ Jeff Phillips Talk:
+ \begin{enumerate}
+     \item Morning activity about buying and selling data
+     \item Thinking about predicting data from a set of inputs as a function
+     \item Mean squared error can overfit the data: exaggerate any outliers. Can be likely to generalize on new data that we haven't seen yet. When we see new data, the loss function may change drastically to fit this new data
+     \item How do we overcome this? Have training and testing data be two different sets of data. Quanitfying outliers and removing them from the data set. 
+     \item How do you find and determine what is and what is not an outlier? There are a bunch of heuristics about how to do this. There have been new algos that have come out about training models and finding the mean of higher dimensional data to deal with outliers. These algos can actually work well with up to 30\% outliers in the data.
+     \item How do we gather testing data? We randomly sample the data and do an 80/20 split between testing and training data.
+     \item Cross-Validation: Using a testing and training split to analyze how well the model is performing
+     \item The data needs to bee IID in order to make this work: Independent, Identitical data. 
+     \item Do not put everything into training, otherwise you can overfit and not actually perform well
+     \item Where can this get better? What is wrong about this?
+ \end{enumerate}
+ \newday{2023-6-21}
+ Started by reading d2l.ai. See d2l.ai Overleaf for notes. 
+
+ TREU 2023:
+
+ Hannah Cohoon's talk
+ \begin{enumerate}
+     \item Human Centered Computing:
+     \item Do artifacts have politics? Technology or artifacts do take a stance. Legislation can always be changed, but it can be hard to tear down a bridge once it is up. 
+     \item The bridges in Long Island, New York are a classic example of biased technology
+     \item HCI gives us a perspective and a framework for decisions that help us avoid negative technology and technology that gatekeeps. 
+     \item Value conflict: When a designer's values are in conflict with the users values. The user may also have values that can conflict with their own values
+     \item 
  \end{enumerate}
 \end{document} % this will automatically generate a references chapter if you cited any references throughout the text

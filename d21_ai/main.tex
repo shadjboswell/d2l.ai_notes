@@ -1,0 +1,227 @@
+\documentclass{report}
+
+\input{Formatting/preamble}
+\input{Formatting/macros}
+\input{Formatting/letterfonts}
+
+\title{\Huge{d2l.ai}\\Notes}
+\author{\huge{Shad Boswell}}
+\date{}
+
+\begin{document}
+
+\maketitle
+\newpage% or \cleardoublepage
+% \pdfbookmark[<level>]{<title>}{<dest>}
+\pdfbookmark[section]{\contentsname}{toc}
+\tableofcontents
+\pagebreak
+
+\chapter{}
+\section{Introduction}
+I am really excited to be learning about Deep Learning. This area is still quite new to me, but its relevance grows every day. I will be keeping track of the important bits of each section in this document as well as completing some of the more lengthy exercises in py files. All of this will be grouped together in a git repo with the address: 
+\url{https://github.com/shadjboswell/d2l.ai_notes.git}. 
+\\
+\\
+\noindent By tracking my learning with a LaTeX document, I also hope to learn more about LaTeX and how I can use it to better communicate ideas. I will add comments on LaTeX things that I picked up along the way. 
+
+\chapter{}
+\section{Data Manipulation}
+\dfn{Tensors}{Tensors are the primary unit of Deep Learning. They are used because of the versatility and ease of use. They come from the PyTorch library and can be used by calling: 
+%\begin{lstlisting}
+   \\ import torch \\
+%\end{lstlisting}}
+Documentation can be found here: \url{https://pytorch.org/docs/stable/tensors.html}
+}
+
+\noindent \textbf{\Large Important Tensor Operations}
+\\
+\\
+
+\noindent {\large Unary Operations}
+\\
+
+Unary scalar operations on Tensors apply the operation to each element in the Tensor. For example, the unary operation torch.exp(x) will perform the operation: $e^x$ on each element $x$ in the Tensor. 
+\\
+
+\noindent {\large Binary Operations}
+\\
+
+Binary operations involve two Tensors. They are either element-wise operations or linear algebra operations. The element-wise, binary operators in python are: +, -, *, /, and **. Linear algebra operations will be covered later.
+\\
+
+\noindent {\large Broadcasting}
+\\
+
+Broadcasting allows you to perform element-wise, binary operations on Tensors with mismatched dimensions. However, the Tensors still need to be compatible for broadcasting. In order to determine if two Tensors are compatible, we just need to compare their first and second dimensions, respectively. If their first dimensions are equal, or one of them is a 1, then the first dimensions are compatible. If their second dimensions are equal, or one of them is a 1, then their second dimensions are equal. For example, consider the Tensors with shapes (3,1) and (3,2). These are compatible because the first dimensions are the same: $3 == 3 \rightarrow$ True and the second dimension of the first Tensor is a 1. If any dimensions of either Tensor are not compatible, then we cannot perform broadcasting. 
+\\
+
+\noindent{\large torch.randn(shape)}
+This is a built in function in the torch library. Its purpose is to initialize a Tensor of the specified shape by picking values from a standard Gaussian distribution with mean 0 and standard deviation 1.
+\\
+
+\noindent{\Large Saving Memory}
+\\
+
+Anytime we perform an operation between two Tensors, it may be wise to store the result in a different Tensor. However, if we just do something like Z = X + Y, where X and Y are Tensors, we are simply just allocating new memory for the result of the operation to be stored at and pointing Z to that new location. This is unwise as we may have thousands of parameters to our model that get updated quickly. Allocating new memory every time we update these parameters is likely really expensive and will become a bottleneck. Thus, it is important to save memory when we can. In order to do operations "in-place" (use the same memory) we can either use Z[:] = X + Y, or if we didn't need the original value of X later on we could do X[:] = X + Y or simply X+=Y.
+
+\section{Data Preprocessing}
+\dfn{Preprocessing}{Preprocessing involves manipulating the data in order to be suitable for machine learning models. This can involve removing outliers, shaping the data to fit our model, or replacing unknown values with some default value or mean value. Essentially, we are changing the data to fit our needs}
+
+\noindent We will be using the $pandas$ library to help us preprocess our data. 
+\\
+
+\noindent {\large CSV Files}
+\\
+
+Most data comes in the CSV, or comma-separate values, format. We can use 
+pandas.read\_csv() to read in our data in a table like format. We can then convert these to Tensors with the function torch.tensor(x.values) where x is our CSV data. 
+\\
+
+\noindent{\large Loading Datasets}
+\\
+
+There are a couple ways in which we can load datasets for us to use. We can either import the $datasets$ module from the $sklearn$ library, or we can use the $pandas$ library to help us load the dataset. 
+\\
+
+\noindent {\large Using $sklearn$}
+\\
+
+$sklearn$ has many functions to load a variety of datasets. All we need to do is import the $datasets$ module from the $sklearn$ library and call the corresponding function to load the dataset. Documentation can be found here: \url{https://scikit-learn.org/stable/datasets/toy_dataset.html}
+\\
+
+\noindent{\large Using $pandas$}
+\\
+
+$pandas$ has the capability to load any data that is stored in CSV format from a url. All we need to do is supply the url to the pandas.read\_csv(). However, sometimes datasets do not already come preloaded with the column/attribute names and we need to provide them ourselves. Such is the case with the Iris dataset located at: \url{https://archive.ics.uci.edu/ml/machine-learning-databases/iris/iris.data}. In this case, we would need to look at some documentation and see if we can find the attribute names. We then need to place the attribute names in a python list and feed that to the read\_csv function as the 'names' parameter. 
+
+\section{Linear Algebra}
+
+This section covered the linear algebra concepts required for basic deep learning. Most of this was review. The most interesting topic for this chapter was "Norms". 
+
+\dfn{Norms}{Norms for vectors describe the magnitude of a vector independent of dimensionality. There are various norms for vectors that can be calculated with the general form being: 
+$$||x||_p = \left(\sum_{i=1}^{n}|x_i|^p\right)^{1/p}$$}
+
+\dfn{Frobenius Norm}{Similar to the norm for a vector, but used for matrices. You take the square root of the sum of the squares of each element in the matrix: 
+$$||X||_F = \left(\sum_{i=1}^{n}\sum_{j=1}^{m}|x_{ij}|^2\right)^{1/2}$$}
+
+\chapter{}
+\section{Linear Regression}
+\dfn{Regression}{Regression, in the context of machine learning, is "a technique for investigating the relationship between independent variables or features and a dependent variable or outcome." - \url{https://www.seldon.io/machine-learning-regression-explained}}
+
+\noindent Linear regression involves makes a few assumptions: 
+\begin{enumerate}
+    \item The relationship between features $x$ and target $y$ is approximately linear. This means that the conditional mean can be expressed as a weighted sum of the features $x$. This allows for the target value to deviate from from its expected value based on noise.
+    \item Any noise is well-behaved, following a Gaussian distribution
+\end{enumerate}
+
+\noindent {\large Models}
+\\
+
+As stated earlier, the expected value can be expressed as a weighted sum of the features plus a bias. 
+\\
+
+For models with many features, we can express the weighted sum as follows: 
+
+$$\hat{y} = w^Tx + b$$
+
+where $w$ are the weights, $x$ are the features, and $b$ is the bias. We just take the dot product of the weights and features and add the bias. In this case, $x$ is just one example of the features. If we had more than one example, we would just create a matrix $X$ where each row of the matrix is an example and each column is a feature. 
+\\
+
+We will never find a real world data set of $n$ examples where every target exactly equals what is observed by the model. This is the reason for noise in the target value. 
+\\
+
+\noindent {\large Loss Function}
+\\
+
+Loss functions refer to functions that measure the accuracy of our model. One of the more common loss functions is the mean squared error: 
+$$\frac{1}{n}\sum_{i=1}^n\left(y_i = \hat{y_i}\right)^2$$ where $y$ is the target value and $\hat{y}$ is the observed value. Due to the squaring of each error, the model can be super sensitive to outliers. To help mitigate this, we just take the mean loss of each example.
+\\
+
+\textbf{"The key technique for optimizing nearly any deep learning model... consists of iteratively reducing the error by updating the parameters in the direction that incrementally lowers the loss function. This is called gradient descent"}
+\\
+
+\dfn{Stochastic Gradient Descent}{An algorithm that can be used to employ gradient descent on one single example in a given dataset at a time}
+
+
+Stochastic Gradient Descent has some drawbacks:
+\begin{enumerate}
+    \item It is more efficient to preform a matrix-vector multiplication, than it is to perform a corresponding number of vector-vector operations. Thus, it can take a lot longer to process one sample at a time than a full batch
+    \item Some of the layers only work well when we have access to more than one observation at a time
+\end{enumerate}
+
+We can solve this problem by taking a minibatch of observations. The size of the minibatch depends on many factors: 
+\begin{enumerate}
+    \item The amount of memory
+    \item The number of accelerators
+    \item The choice of layers 
+    \item The total dataset size
+\end{enumerate}
+
+However, it is best to choose a power of 2 between 32 and 256. \\
+
+Minibatching 101:\\
+
+For each iteration, we start by randomly sampling our minibatch which consists of a fixed number of training examples. We then compute the derivative of the average loss on the minibatch, multiply the gradient by a predetermined small positive value $\eta$ called the \textit{learning rate} and subtract the resulting term from the current parameter values. 
+
+Here is a photo straight from the d2l.ai textbook: 
+
+\includegraphics[]{d2l_ai_minibatch.png}
+
+Finally, the quality of the solution is typically assessed on a separate validation dataset. 
+
+Tip: Rely on libraries to handle your math when you can. This reduces error, increases portability, and most importantly, increases the efficiency of the operations.
+
+A linear regression model can be subsumed into a neural network with a single input layer and single output neuron and no layers in between. 
+
+We can think of each neuron in neural net as a representation of neurons in the brain. In the biological neuron, the dendrites receive the inputs ($x_i$) and their associated weights, the axon produces a linear combination of these inputs and weights ($w \dot x$), may do some postprocessing afterwards, and finally feeds this output to the axon, which feeds it to the axon terminals, which feed it to other neurons. 
+
+The rank of a matrix is the number of columns that are linearly independent of one another. 
+
+\section{Object Oriented Design for Implementation}
+
+It is important to take advantage of Object Oriented Programming in Python to build your neural networks. The approach in d2l.ai is to have three classes: 
+\begin{enumerate}
+    \item Modules class which will hold the models, losses, and optimization methods
+    \item DataModule class which provides data loaders for training and validation
+    \item Trainer class which uses both of the other classes to train models on a variety of hardware platforms
+\end{enumerate}
+
+Data loaders are Python generators that yield a data batch each time they are used. 
+
+The Module class stores all of the trainable parameters for the model, the DataModule class loads the datasets that we want to use to train the model, and the Trainer class trains the model (an instance of Module) on the data loaded by DataModule. 
+
+\section{Synthetic Regression Data}
+
+Generating our own datasets with paramters that we know before hand is a good way to check that our model is performing well. We want to see if our model is able to recover these parameters and correctly classify the data. 
+
+Dataloaders are very important for loading and manipulating data to get it ready for training or validating. They can be used to construct and describe an entire data processing pipeline. 
+
+Check out: \url{https://en.wikipedia.org/wiki/Pseudorandom_permutation}
+
+\section{Linear Regression Implementation from Scratch}
+
+This section details how to implement the linear regression model from scratch. After reading, I will try to do this myself. 
+\\
+
+Depending on which loss function we use, we may need to adjust the learning rate against the batch size. This is common for very large minibatches.
+\\
+
+Training loop: 
+\begin{enumerate}
+    \item Initialize parameters
+    \item Repeat until done: 
+    \begin{enumerate}
+        \item Calculate loss
+        \item Zero Gradients
+        \item Back Propogate
+        \item Update parameters
+    \end{enumerate}
+\end{enumerate}
+
+\section{Compact Linear Regression Implementation}
+
+\section{Generalization}
+
+In machine learning, we want to discover patterns. But, how can we be sure that we have actually learned a pattern and not just memorized our training data? 
+\end{document}
